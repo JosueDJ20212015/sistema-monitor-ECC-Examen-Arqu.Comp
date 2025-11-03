@@ -17,6 +17,7 @@ Fue creado como parte del **examen práctico de la clase Arquitectura de Computa
 ---
 
 ## 🧩 Estructura del proyecto
+```bash
 monitor-sistema/
 │
 ├── monitor/ #Configuración principal de Django (settings, urls)
@@ -29,6 +30,7 @@ monitor-sistema/
 ├── manage.py #Comando principal de Django
 ├── requirements.txt #Dependencias del proyecto
 └── README.md #Este archivo
+```
 
 ---
 
