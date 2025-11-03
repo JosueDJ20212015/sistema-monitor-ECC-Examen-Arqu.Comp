@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitor - Arquitectura de Comp</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen p-6 flex flex-col">
+  <h1 class="text-3xl font-bold mb-6 text-center">Monitor - Arquitectura de Comp</h1>
+
+  <!-- control del intervalo -->
+  <div class="text-center mb-6">
+    <label for="refresh-interval" class="font-semibold mr-2">Se actualiza en:</label>
+    <input type="number" id="refresh-interval" min="1" value="5" placeholder="5" class="text-black rounded-lg px-2 py-1 w-16 text-center">
+    <label for="refresh-interval" class="font-semibold mr-2">segundos</label>
+    <button id="apply-interval" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-3 py-1 rounded-lg ml-2">Aplicar</button>
+  </div>
+
+  <!-- tarjetas -->
+  <div id="cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"></div>
+
+  <!-- panel dinamico inferior -->
+  <div id="chartPanel" class="bg-gray-800 rounded-xl p-6 shadow-lg hidden">
+    <h2 id="chartTitle" class="text-xl font-semibold mb-4 text-center"></h2>
+    <canvas id="metricChart" height="100"></canvas>
+  </div>
+
+  <script>
+    let selectedMetric = null;
+    let chart = null;
+    const chartData = { labels: [], values: [] };
+    let intervalTime = 5000;
+    let interval = null;
+
+    async function fetchData() {
+      try {
+        const res = await fetch('/data/');
+        const data = await res.json();
+
+        if (data.error) {
+          document.getElementById('cards').innerHTML = `<p>Error: ${data.error}</p>`;
+          return;
+        }
+
+        const icons = {
+          cpu: 'cpu',
+          memory: 'memory-stick',
+          disk: 'hard-drive',
+          network: 'arrow-down-up',
+          temp: 'thermometer',
+          system: 'monitor'
+        };
+
+        document.getElementById('cards').innerHTML = `
+          <div onclick="showChart('CPU', ${data.cpu})" class="card">
+            <i data-lucide="${icons.cpu}"></i>
+            <h2>CPU</h2>
+            <p>${data.cpu}%</p>
+            <small>${data.cpu_model || 'Procesador'}</small>
+            <small>${data.cores} núcleos • ${data.cpu_freq_current || 0} GHz / ${data.cpu_freq_max || 0} GHz</small>
+          </div>
+          <div onclick="showChart('Memoria RAM', ${data.memory_percent})" class="card">
+            <i data-lucide="${icons.memory}"></i>
+            <h2>Memoria RAM</h2>
+            <p>${data.memory_percent}%</p>
+            <small>${data.memory_used} GB / ${data.memory_total} GB</small>
+            <small>${data.memory_type || 'DDR4'} • ${data.memory_speed || '2400'} MHz</small>
+          </div>
+          <div onclick="showChart('Disco', ${data.disk_percent})" class="card">
+            <i data-lucide="${icons.disk}"></i>
+            <h2>Disco</h2>
+            <p>${data.disk_percent}%</p>
+            <small>${data.disk_used} GB / ${data.disk_total} GB</small>
+            <small>${data.disk_type || 'SSD'} • ${data.disk_model || 'Unidad principal'}</small>
+          </div>
+          <div onclick="showChart('Red', ${data.net_recv})" class="card"><i data-lucide="${icons.network}"></i><h2>Red</h2><p>${data.net_sent} / ${data.net_recv} MB</p><small>Enviado / Recibido</small></div>
+          <div onclick="showChart('Temperatura CPU', ${data.cpu_temp || 0})" class="card"><i data-lucide="${icons.temp}"></i><h2>Temperatura del procesador</h2><p>${data.cpu_temp ? data.cpu_temp + ' °C' : 'No disp.'}</p></div>
+          <div class="card"><i data-lucide="${icons.system}"></i><h2>Sistema</h2><p>${data.system}</p></div>
+        `;
+
+        lucide.createIcons();
+        if (selectedMetric) updateChart(data);
+
+      } catch (error) {
+        console.error("Error al obtener informacion:", error);
+      }
+    }
+
+    //estilos para las tarjetas
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .card {
+        background-color: #1f2937;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        background-color: #374151;
+      }
+      .card i {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 10px;
+      }
+      .card h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+      .card p {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin: 5px 0;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // mostrando grafico
+    function showChart(metricName, value) {
+      selectedMetric = metricName;
+      chartData.labels = [];
+      chartData.values = [];
+
+      document.getElementById('chartPanel').classList.remove('hidden');
+      document.getElementById('chartTitle').textContent = `Historial de ${metricName}`;
+      const ctx = document.getElementById('metricChart').getContext('2d');
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: metricName,
+            data: chartData.values,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true },
+            x: { display: false }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    //grafico se actualiza dinamicamente
+    function updateChart(data) {
+      let value = 0;
+      switch (selectedMetric) {
+        case 'CPU': value = data.cpu; break;
+        case 'Memoria RAM': value = data.memory_percent; break;
+        case 'Disco': value = data.disk_percent; break;
+        case 'Red': value = data.net_recv; break;
+        case 'Temperatura CPU': value = data.cpu_temp || 0; break;
+      }
+
+      const timestamp = new Date().toLocaleTimeString();
+      chartData.labels.push(timestamp);
+      chartData.values.push(value);
+
+      if (chartData.labels.length > 20) {
+        chartData.labels.shift();
+        chartData.values.shift();
+      }
+
+      chart.data.labels = chartData.labels;
+      chart.data.datasets[0].data = chartData.values;
+      chart.update();
+    }
+
+    // Intervalo
+    document.getElementById("apply-interval").addEventListener("click", () => {
+      const newInterval = parseInt(document.getElementById("refresh-interval").value);
+      if (isNaN(newInterval) || newInterval < 1) {
+        alert("Por favor ingresa un número válido mayor o igual a 1");
+        return;
+      }
+      clearInterval(interval);
+      intervalTime = newInterval * 1000;
+      interval = setInterval(fetchData, intervalTime);
+      fetchData();
+    });
+
+    //primer fetch
+    fetchData();
+    interval = setInterval(fetchData, intervalTime);
+  </script>
+</body>
+</html>
