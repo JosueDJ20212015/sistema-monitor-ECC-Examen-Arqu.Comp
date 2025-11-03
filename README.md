@@ -39,25 +39,25 @@ monitor-sistema/
 ```bash
 git clone https://github.com/JosueDJ20212015/sistema-monitor-ECC-Examen-Arqu.Comp.git
 cd sistema-monitor-ECC-Examen-Arqu.Comp
-`
+```
 
 ### 2️⃣ Crear y activar el entorno virtual
 ```bash
 python -m venv venv
 venv\Scripts\activate
-`
+```
 
 ### 3️⃣ Instalar dependencias
 ```bash
 pip install -r requirements.txt
-`
+```
 
 ### ▶️ Ejecutar el servidor
 ```bash
 python manage.py runserver
-`
+```
 
 Luego abre tu navegador y visita:
 ```bash
 http://127.0.0.1:8000/
-`
+```
