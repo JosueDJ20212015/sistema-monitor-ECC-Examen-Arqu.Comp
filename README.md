@@ -7,7 +7,6 @@ Fue creado como parte del **examen práctico de la clase Arquitectura de Computa
 
 ## 🚀 Características principales
 
-
 - Visualización **en tiempo real** del estado del sistema
 - Intervalo de actualización configurable manualmente (por defecto 5 segundos)
 - Interfaz web moderna y minimalista desarrollada con **HTML + CSS + Tailwind**
@@ -63,3 +62,37 @@ Luego abre tu navegador y visita:
 ```bash
 http://127.0.0.1:8000/
 ```
+
+
+## 🧠 Explicación de los componentes
+
+🧩 views.py
+
+Contiene la lógica principal.
+Utiliza la librería psutil para obtener los siguientes datos:
+- Porcentaje de uso de CPU, RAM y disco.
+- Velocidad y núcleos del procesador.
+- Datos de red enviados/recibidos.
+- Temperatura del CPU (cuando está disponible).
+Estos datos se envían al template en forma de diccionario para ser renderizados dinámicamente.
+
+🎨 templates/sistema/index.html
+
+Es la interfaz web del monitor.
+Muestra las métricas del sistema en tarjetas con íconos y un diseño oscuro moderno.
+Incluye un selector para ajustar el intervalo de actualización en segundos mediante JavaScript.
+
+🌐 urls.py
+Define las rutas del proyecto, conectando la vista principal (index) con la URL raíz del sistema.
+
+
+
+## 🧑‍💻 Autores
+* Emer Romero
+* Cristhian Espinoza
+* Cristhian Calderiny
+
+# 🖼️ Screenshots
+![Vista previa](./static/1.png)
+![Vista previa](./static/2.png)
+![Vista previa](./static/3.png)
