@@ -19,16 +19,16 @@ Fue creado como parte del **examen práctico de la clase Arquitectura de Computa
 ```bash
 monitor-sistema/
 │
-├── monitor/ #Configuración principal de Django (settings, urls)
-├── sistema/ #Aplicación que contiene la lógica del monitor
-│ ├── templates/ #Carpeta con la interfaz web (index.html)
-│ ├── views.py #Controlador principal: obtiene los datos del sistema
-│ ├── urls.py #Enrutamiento hacia las vistas
+├── monitor/
+├── sistema/
+│ ├── templates/
+│ ├── views.py
+│ ├── urls.py
 │ └── models.py
 │
-├── manage.py #Comando principal de Django
-├── requirements.txt #Dependencias del proyecto
-└── README.md #Este archivo
+├── manage.py
+├── requirements.txt
+└── README.md
 ```
 
 ---
